@@ -4,6 +4,7 @@
 
 
 # Libraries
+import csv
 import pandas as pd
 #------------------------------------------------------------------------------
 
@@ -19,8 +20,12 @@ def A_mat(x, deg):
     """Create the matrix A part of the least squares problem.
        x: vector of input data.
        deg: degree of the polynomial fit."""
-
+    A = x[2:3]
+    print(A)
+    # A = x.loc[['MaxTemp', 'MinTemp']]
+    # A must be Nx2 matrix
        #return FIXME
+       
 
 def LLS_Solve(x,y, deg):
     """Find the vector w that solves the least squares regression.
@@ -61,10 +66,15 @@ def RMSE(x,y,w):
 
 # 1b. Solve the least squares linear regression problem for the Athens 
 #     temperature data.  Make sure to annotate the plot with the RMSE.
-data = pd.read_csv('/Users/mayagonzalez/Desktop/Academic/ML_HW/athens_ww2_weather.csv')
-numRows = len(data.index)  # should be 358
-print(numRows)
-#A_mat(data, )
+
+
+data = []
+with open('/Users/mayagonzalez/Desktop/Academic/ML_HW/athens_ww2_weather.csv') as csvfile:
+    reader = csv.reader(csvfile)
+    for row in reader:
+        data.append(row)
+numRows = len(data)  # deg of polynomial fit must be less than numRows
+A_mat(data, deg = 10)
 
 # Problem 2 -- Polynomial Regression with the Yosemite Visitor Data
 #------------------------------------------------------------------------------
