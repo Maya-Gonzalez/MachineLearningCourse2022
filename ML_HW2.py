@@ -5,7 +5,11 @@
 
 # Libraries
 import csv
+from tkinter import Y
 import pandas as pd
+import numpy as np
+from scipy import linalg as LA
+import matplotlib.pyplot as plt
 #------------------------------------------------------------------------------
 
 
@@ -14,25 +18,29 @@ import pandas as pd
 
 # In the following problem, implement the solution to the least squares problem.
 
-# 1a. Complete the following functions:
+# 1a. Complete the followingfunctions:
 
 def A_mat(x, deg):
     """Create the matrix A part of the least squares problem.
        x: vector of input data.
        deg: degree of the polynomial fit."""
-    A = x[2:3]
-    print(A)
-    # A = x.loc[['MaxTemp', 'MinTemp']]
-    # A must be Nx2 matrix
-       #return FIXME
-       
+    N = len(x)
+    ones = np.ones(N, dtype=float )
+    A = np.c_[np.power(x, deg)]
+    for i in range(deg-1):
+        newCol = np.power(x, (deg-1) -i)
+        A = np.c_[A, newCol]
+    A = np.c_[A, ones]
+    return A
 
 def LLS_Solve(x,y, deg):
     """Find the vector w that solves the least squares regression.
        x: vector of input data.
        y: vector of output data.
        deg: degree of the polynomial fit."""
-    #return FIXME
+    A = A_mat(x, deg)
+    w = (LA.inv(A.T@A))@A.T@y
+    return(w)
 
 def LLS_ridge(x,y,deg,lam):
     """Find the vector w that solves the ridge regresssion problem.
@@ -40,13 +48,21 @@ def LLS_ridge(x,y,deg,lam):
        y: vector of output data.
        deg: degree of the polynomial fit.
        lam: parameter for the ridge regression."""
-    #return FIXME
+    A = A_mat(x, deg)
+    ATA = A.T@A
+    I = np.identity(len(ATA))
+    lambdaI = np.dot(lam, I)
+    invAdd = LA.inv(np.add(ATA, lambdaI))
+    w = invAdd@(A.T@y)
+    print('ridge regression:\n',w)
+    return(w)
 
 def poly_func(data, coeffs):
     """Produce the vector of output data for a polynomial.
        data: x-values of the polynomial.
        coeffs: vector of coefficients for the polynomial."""
-    #return FIXME
+    y = data@coeffs
+    return(y)
 
 def LLS_func(x,y,w,deg):
     """The linear least squares objective function.
@@ -54,33 +70,53 @@ def LLS_func(x,y,w,deg):
        y: vector of output data.
        w: vector of weights.
        deg: degree of the polynomial."""
-    #return FIXME
+    A = A_mat(x, deg)
+    weights = LLS_Solve(x, y, deg)
+    y_pred = poly_func(A, weights)
+    N = len(A)
+    f = (1/N) * (LA.norm(y_pred - y) **2)
+    return f
 
 def RMSE(x,y,w):
     """Compute the root mean square error.
        x: vector of input data.
        y: vector of output data.
        w: vector of weights."""
-    #return FIXME
-
+    wtd_rmse = np.sqrt(((y-x)**2).mean())
+    return wtd_rmse
 
 # 1b. Solve the least squares linear regression problem for the Athens 
 #     temperature data.  Make sure to annotate the plot with the RMSE.
 
 
-data = []
-with open('/Users/mayagonzalez/Desktop/Academic/ML_HW/athens_ww2_weather.csv') as csvfile:
-    reader = csv.reader(csvfile)
-    for row in reader:
-        data.append(row)
-numRows = len(data)  # deg of polynomial fit must be less than numRows
-A_mat(data, deg = 10)
+
+data = np.genfromtxt('athens_ww2_weather.csv', delimiter=',')
+# numRows = len(data)  # deg of polynomial fit must be less than numRows
+deg = 1
+x_vals= data[1:, 8:9] # 8th col is min vals
+y_vals = data[1:, 7:8] # 7th col is max vals
+A = A_mat(x_vals, deg)
+
+weights = LLS_Solve(x_vals, y_vals, deg) 
+ridge_vector = LLS_ridge(x_vals, y_vals, deg, lam = .5)
+y_pred = poly_func(A, weights)
+f_func = LLS_func(x_vals, y_vals, weights, deg)
+rmse = RMSE(x_vals,y_vals,weights)
+
+
+plt.scatter( x_vals, y_vals, color = 'g', marker = 'o', s = 30)
+plt.plot(x_vals, y_pred, color = "g") 
+plt.title('Training Data')
+plt.show()
+
 
 # Problem 2 -- Polynomial Regression with the Yosemite Visitor Data
 #------------------------------------------------------------------------------
 
 # 2a. Create degree-n polynomial fits for 5 years of the Yosemite data, with
-#     n ranging from 1 to 20.  Additionally, create plots comparing the 
+#     n ranging from 1 to 20.  A
+# 
+#     Additionally, create plots comparing the 
 #     training error and RMSE for 3 years of data selected at random (distinct
 #     from the years used for training).
     
