@@ -5,11 +5,13 @@
 
 # Libraries
 import csv
+import math
 from tkinter import Y
 import pandas as pd
 import numpy as np
 from scipy import linalg as LA
 import matplotlib.pyplot as plt
+
 #------------------------------------------------------------------------------
 
 
@@ -104,9 +106,10 @@ f_func = LLS_func(x_vals, y_vals, weights, deg)
 rmse = RMSE(x_vals,y_vals,weights)
 
 
-plt.scatter( x_vals, y_vals, color = 'g', marker = 'o', s = 30)
-plt.plot(x_vals, y_pred, color = "g") 
-plt.title('Training Data')
+plt.scatter( x_vals, y_vals, color = 'b', marker = (5, 1))
+plt.plot(x_vals, y_pred, color = "r") 
+plt.title('Temperature Variations in Athens, Greece (Nov. 1944 - Dec. 1945)')
+plt.text(-2,43,'RMSE: {RMSE_val}'.format(RMSE_val = round(rmse,2)), size = 10, color = 'purple')
 plt.show()
 
 
