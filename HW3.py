@@ -187,16 +187,96 @@ def min_gd(K, w, D):
 
 #for loop that goes through range (5,10,25,50)
 
-def mini_batch_gd(x_mini, y_mini, K, w, D):
+def mini(batch_size, x, y):
+    data = np.c_[x, y]
+    np.random.shuffle(data)
+    N = len(data)
+    # total number of batches of input size
+    binQuantity = int(N/batch_size)
+    remainder = N - (binQuantity*batch_size)
+    # create 5 bins 
+    miniBatchDataX = []
+    miniBatchDataY = []
+
+
+    numDataPoints = [5,10,25,50]
+    numDataPoints = [1,2,3,4]
+
+    # need bins of size numDataPoints
+    # [0-4][4-9][9-14]
+    #increment i by 6
+
+    # for i in numDataPoints:
+    #     print(i)
+    #     print(data[i:i + batch_size, :])
+
+    i =0
+    currBin=0
+    while(i<len(x)):
+        if(remainder != 0 and currBin == binQuantity -1):
+            batch_size = batch_size + remainder
+
+        print(i)
+        print(data[i:i + batch_size, :])
+        i+= batch_size
+        currBin+=1
+    print(currBin)
+    print(remainder)
+    print(data)
+
+    # for i in enumerate(batch_size):
+    #     # get first 5 elements, then next
+    #     # if there is a remainder and we're forming the last bin
+    #     if(remainder != 0 and i == (binQuantity-1)):
+    #         batch_size = batch_size + remainder
+    #         print(N)
+    #         print(i)
+    #     else:
+    #         print(i)
+    #         print(batch_size)
+    #         dataPointX = data[i][0]
+    #         dataPointY = data[i][1]
+
+    #         miniBatchDataX.append(dataPointX)
+    #         miniBatchDataY.append(dataPointY)
+    #         print(miniBatchDataY[:10])
+
+
+        # for i in range(batch_size):
+        #     if(remainder != 0 and i == (binQuantity-1)):
+        #         batch_size = batch_size + remainder
+        #         print(N)
+        #         print(i)
+        #     else:
+        #         # print(i)
+        #         # print(batch_size)
+        #         # dataPointX = point[0]
+        #         # dataPointY = point[1]
+        #         # miniBatchDataX.append(dataPointX)
+        #         # miniBatchDataY.append(dataPointY)
+        #         # indvBatch.append(data[i][:])
+        #         print(point[i: batch_size])
+
+
+        # pass each batch into gd function 
+
+    # create those bins
+
+    # calculate if there will be remaining elements
+    # if so, add those elements to last bin
+    
+mini(5, x,y)
+def mini_batch_gd(x, y, K, w, D):
     # with fixed step size
     global miniCount
     miniCount = 0
-    eps = .9
+    eps = 0.9
     while(LA.norm(D) >= K):
         #FIXME: why does the derivative keep increasing --> goes to infinity 
         # need deriv to get closer to 0 
+        D = LLS_deriv(x, y, w, deg)
         w = w - (eps*D)
-        D = LLS_deriv(x_mini, y_mini, w, deg)
+        # D = LLS_deriv(x, y, w, deg)
         
 
         miniCount+=1
@@ -204,8 +284,9 @@ def mini_batch_gd(x_mini, y_mini, K, w, D):
         c_hist.append(LLS_func(x,y,w,deg))
         print(miniCount)
         print(LA.norm(D))
-
     return w
+
+
 
 
 
@@ -227,17 +308,17 @@ for i in numDataPoints:
     K = 0.01  
     w = np.array([[100],[-100]])
     D = np.array([[-1], [1]])
-    mini_batch_gd(x, y, K, w, D)
+    # mini_batch_gd(x, y, K, w, D)
 
     # plot 
-    iterations = np.linspace(1,count, count)
-    plt.plot(iterations, d_hist, color = 'b', marker = (5, 1))
-    plt.plot(iterations, c_hist, color = 'b', marker = (5, 1))
-    plt.title('Derivative and Cost Size with Respect to Iterations for %d Data Points' % i)
-    plt.ylabel("Derivative/Cost Size")
-    plt.xlabel("Iterations")
-    plt.show()
-    plt.clf()
+    # iterations = np.linspace(1,count, count)
+    # plt.plot(iterations, d_hist, color = 'b', marker = (5, 1))
+    # plt.plot(iterations, c_hist, color = 'b', marker = (5, 1))
+    # plt.title('Derivative and Cost Size with Respect to Iterations for %d Data Points' % i)
+    # plt.ylabel("Derivative/Cost Size")
+    # plt.xlabel("Iterations")
+    # plt.show()
+    # plt.clf()
 
 # 1d. Repeat 1b, but now implement stochastic gradient descent.  Plot the curves 
 #     for d_hist and c_hist.  WARNING: There is a strong possibility that your
