@@ -23,8 +23,6 @@ import random
 # by N (i.e. the number of data points there are).  Carry this over into all 
 # corresponding expression where this would appear (the derivative being one of them).
 
-data = np.genfromtxt('athens_ww2_weather.csv', delimiter=',')
-
 
 def A_mat(x, deg):
     """Create the matrix A part of the least squares problem.
@@ -63,8 +61,6 @@ def LLS_func(x,y,w,deg):
     A = A_mat(x, deg)
     N = len(x)
     f = (1/N) * (LA.norm(A@w - y) **2)
-
-    # f = LA.norm(A@x-y) ** 2
     return f
 # 1a. Fill out the function for the derivative of the least-squares cost function:
 def LLS_deriv(x,y,w,deg):
@@ -102,22 +98,20 @@ def LLS_deriv(x,y,w,deg):
 #       with respect to the number of iterations.
 # 
 
+data = np.genfromtxt('athens_ww2_weather.csv', delimiter=',')
+df = pd.read_csv('athens_ww2_weather.csv', delimiter=',')
+x = df.iloc[0:, 8:9]
+y = df.iloc[0:, 7:8]
+# x = data[1:, 8:9] # min
+# y = data[1:, 7:8] # max
 
-x = data[1:, 8:9] # min
-y = data[1:, 7:8] # max
+
 deg = 1
 K = 0.01  
 w = np.array([[100],[-100]])
 D = np.array([[-1], [1]])
-
-
-d_hist = []
-c_hist = []
-
-x = data[1:, 8:9] # min
-y = data[1:, 7:8] # max
-
-
+# d_hist = []
+# c_hist = []
 count = 0
 def backtrackingLineSearch(w, D):
     eps = 1    
@@ -127,13 +121,17 @@ def backtrackingLineSearch(w, D):
         eps *= 0.9
     return eps
 
-def min_gd(K, w, D):
+def min_gd(x,y,K, w, D):
     global count
+    count = 0
     # global w_new
+    d_hist = []
+    c_hist=[]
+    K = 0.01  
+    w = np.array([[100],[-100]])
+    D = np.array([[-1], [1]])
+
     while(LA.norm(D) >= K):
-        # if statement --> pass in w_new to bLS fn
-        # if (count == 0):
-        #     w_new = w
         eps = backtrackingLineSearch(w, D)
         w = w - (eps*D)
         D = LLS_deriv(x, y, w, deg)
@@ -143,17 +141,17 @@ def min_gd(K, w, D):
         count+=1
 
         print('\n', count)
-        # print('eps = ', eps)
-        # print('D = ', D)
-        # print('eps*D = ', eps*D)
-        # print('w = ', w)
-        # print('w_new = ', w)
-        # print('w = ', w)
-        # print('D norm' , LA.norm(D))
-        # print('C val', LLS_func(x,y,w,deg))
+        print('eps = ', eps)
+        print('D = ', D)
+        print('eps*D = ', eps*D)
+        print('w = ', w)
+        print('w_new = ', w)
+        print('w = ', w)
+        print('D norm' , LA.norm(D))
+        print('C val', LLS_func(x,y,w,deg))
         # return min_gd(K, w, D)
     return w
-# min_gd(K, w, D)
+min_gd(x,y,K, w, D)
 
 
 # plot will  be spikey, batch gradients descent and schcastic will be smooth,
@@ -187,128 +185,104 @@ def min_gd(K, w, D):
 
 #for loop that goes through range (5,10,25,50)
 
+def gd(x, y, K, w, D):
+    # with fixed step size
+    deg = 1
+    K = 0.01  
+    w = np.array([[100],[-100]])
+    D = np.array([[-1], [1]])
+    eps = 0.09
+    d_hist = []
+    c_hist = []
+    while(LA.norm(D) >= K):
+        #FIXME: why does the derivative keep increasing --> goes to infinity 
+        # need deriv to get closer to 0 
+        w = w - (eps*D)
+        D = LLS_deriv(x, y, w, deg)
+        d_hist.append(LA.norm(D))
+        c_hist.append(LLS_func(x,y,w,deg))
+        print(LA.norm(D))
+        print('cost: ', LLS_func(x,y,w,deg))
+    return w
+# gd(x,y, K, w, D)
+
 def mini(batch_size, x, y):
+    # randomize the data, but keep x,y pairs together
     data = np.c_[x, y]
     np.random.shuffle(data)
     N = len(data)
     # total number of batches of input size
     binQuantity = int(N/batch_size)
     remainder = N - (binQuantity*batch_size)
-    # create 5 bins 
-    miniBatchDataX = []
-    miniBatchDataY = []
-
-
-    numDataPoints = [5,10,25,50]
-    numDataPoints = [1,2,3,4]
-
-    # need bins of size numDataPoints
-    # [0-4][4-9][9-14]
-    #increment i by 6
-
-    # for i in numDataPoints:
-    #     print(i)
-    #     print(data[i:i + batch_size, :])
-
+    # create (batch_size) num bins 
+    miniBatchData = []
     i =0
     currBin=0
     while(i<len(x)):
-        if(remainder != 0 and currBin == binQuantity -1):
+        miniBatchData = []
+        errorList = []
+        if(remainder != 0 and currBin == (binQuantity -1)):
             batch_size = batch_size + remainder
+        data[i:i + batch_size, :]
+        # now we add these (batch_size) points to list
+        miniBatchData.append(data[i:i + batch_size, :])
+        miniBatchData = np.array(miniBatchData)
+        # print(miniBatchData)
+        # print('_________________________')
+        # # train on the mini batch
+        # # segment list to x and y
+        # x = ((miniBatchData[:][0])[:,0])
+        # y = ((miniBatchData[:][0])[:,1])
+        # print(np.shape(miniBatchData))
 
-        print(i)
-        print(data[i:i + batch_size, :])
-        i+= batch_size
+
+        # FIXMEEEEE: dont want to have to keep reshaping
+        # print(miniBatchData)
+        miniBatchData = np.reshape(miniBatchData, (batch_size,2))
+        # print('___________RESHAPE______________')
+        # print(miniBatchData)
+        mini_x = np.reshape((miniBatchData[:,0]), (batch_size, 1))
+        mini_y = np.reshape((miniBatchData[:,1]), (batch_size, 1))
+        # print(mini_x)
+        # print(mini_y)
+        # pass x and y into gd function 
+        print('_________________________')
+        min_gd(mini_x,mini_y, K, w, D)
+        # errorList.append(min_gd(mini_x,mini_y, K, w, D))
+        print('done')
+        i += batch_size
         currBin+=1
-    print(currBin)
-    print(remainder)
-    print(data)
-
-    # for i in enumerate(batch_size):
-    #     # get first 5 elements, then next
-    #     # if there is a remainder and we're forming the last bin
-    #     if(remainder != 0 and i == (binQuantity-1)):
-    #         batch_size = batch_size + remainder
-    #         print(N)
-    #         print(i)
-    #     else:
-    #         print(i)
-    #         print(batch_size)
-    #         dataPointX = data[i][0]
-    #         dataPointY = data[i][1]
-
-    #         miniBatchDataX.append(dataPointX)
-    #         miniBatchDataY.append(dataPointY)
-    #         print(miniBatchDataY[:10])
-
-
-        # for i in range(batch_size):
-        #     if(remainder != 0 and i == (binQuantity-1)):
-        #         batch_size = batch_size + remainder
-        #         print(N)
-        #         print(i)
-        #     else:
-        #         # print(i)
-        #         # print(batch_size)
-        #         # dataPointX = point[0]
-        #         # dataPointY = point[1]
-        #         # miniBatchDataX.append(dataPointX)
-        #         # miniBatchDataY.append(dataPointY)
-        #         # indvBatch.append(data[i][:])
-        #         print(point[i: batch_size])
-
-
-        # pass each batch into gd function 
-
-    # create those bins
-
-    # calculate if there will be remaining elements
-    # if so, add those elements to last bin
-    
+    return errorList
+print('-----------')
 mini(5, x,y)
-def mini_batch_gd(x, y, K, w, D):
-    # with fixed step size
-    global miniCount
-    miniCount = 0
-    eps = 0.9
-    while(LA.norm(D) >= K):
-        #FIXME: why does the derivative keep increasing --> goes to infinity 
-        # need deriv to get closer to 0 
-        D = LLS_deriv(x, y, w, deg)
-        w = w - (eps*D)
-        # D = LLS_deriv(x, y, w, deg)
-        
 
-        miniCount+=1
-        d_hist.append(LA.norm(D))
-        c_hist.append(LLS_func(x,y,w,deg))
-        print(miniCount)
-        print(LA.norm(D))
-    return w
+# print(mini(5, x,y))
+# plt.plot(mini(5, x,y))
 
 
 
 
-
-numDataPoints = [5,10,25,50]
-for i in numDataPoints:
-    randomDataListX = []
-    randomDataListY = []
-    for j in range(i):
-        # this inner loop should execute 5 times, 10 times, etc.
-        randIndex = np.random.choice(y.shape[0], replace=False)
-        dataPointX = x[randIndex]
-        dataPointY = y[randIndex]
-        randomDataListX.append(dataPointX)
-        randomDataListY.append(dataPointY)
-        # pass data points into gradient descent fn
-    # implement gradient descent function for each set of x and y 
-    x = np.array(randomDataListX)
-    y = np.array(randomDataListY)
-    K = 0.01  
-    w = np.array([[100],[-100]])
-    D = np.array([[-1], [1]])
-    # mini_batch_gd(x, y, K, w, D)
+# print(x)
+# print(x.iloc[1])
+# numDataPoints = [5,10,25,50]
+# for i in numDataPoints:
+#     randomDataListX = []
+#     randomDataListY = []
+#     for j in range(i):
+#         # this inner loop should execute 5 times, 10 times, etc.
+#         randIndex = np.random.choice(y.shape[0], replace=False)
+#         dataPointX = x.iloc[randIndex]
+#         dataPointY = y.iloc[randIndex]
+#         randomDataListX.append(dataPointX)
+#         randomDataListY.append(dataPointY)
+#         # pass data points into gradient descent fn
+#     # implement gradient descent function for each set of x and y 
+#     x_list = np.array(randomDataListX)
+#     y_list = np.array(randomDataListY)
+#     K = 0.01  
+#     w = np.array([[100],[-100]])
+#     D = np.array([[-1], [1]])
+#     mini(x_list, y_list, K, w, D)
 
     # plot 
     # iterations = np.linspace(1,count, count)
