@@ -12,6 +12,7 @@ import numpy as np
 from scipy import linalg as LA
 import matplotlib.pyplot as plt
 import random
+import time
 #------------------------------------------------------------------------------
 
 # Problem 1 - Gradient Descent Using Athens Temperature Data
@@ -122,6 +123,7 @@ def backtrackingLineSearch(w, D):
     return eps
 
 def min_gd(x,y,K, w, D):
+    # iterative step size: Armijo-Goldstein condition
     global count
     count = 0
     # global w_new
@@ -130,7 +132,7 @@ def min_gd(x,y,K, w, D):
     K = 0.01  
     w = np.array([[100],[-100]])
     D = np.array([[-1], [1]])
-
+    start = time.time()
     while(LA.norm(D) >= K):
         eps = backtrackingLineSearch(w, D)
         w = w - (eps*D)
@@ -140,40 +142,93 @@ def min_gd(x,y,K, w, D):
         c_hist.append(LLS_func(x,y,w,deg))
         count+=1
 
-        print('\n', count)
-        print('eps = ', eps)
-        print('D = ', D)
-        print('eps*D = ', eps*D)
-        print('w = ', w)
-        print('w_new = ', w)
-        print('w = ', w)
-        print('D norm' , LA.norm(D))
-        print('C val', LLS_func(x,y,w,deg))
+        # print(count)
+        # print('eps = ', eps)
+        # print('D = ', D)
+        # print('eps*D = ', eps*D)
+        # print('w = ', w)
+        # print('w_new = ', w)
+        # print('w = ', w)
+        # print('D norm' , LA.norm(D))
+        # print('C val', LLS_func(x,y,w,deg))
         # return min_gd(K, w, D)
-    return w
-min_gd(x,y,K, w, D)
+
+        #FIXMEEE: add conv_speed as output of function 
+    end = time.time()
+    conv_speed = end-start
+
+    return w, d_hist, c_hist, count, D, conv_speed
+# w, d_hist, c_hist, count, D, conv_speed = min_gd(x,y,K, w, D)
+def batch_gd(K, batch_size):
+
+    d_hist = []
+    c_hist = []
+
+    data = np.c_[x, y]
+    np.random.shuffle(data)
+    N = len(data)
+    # total number of batches of input size
+    binQuantity = int(N/batch_size)
+    remainder = N - (binQuantity*batch_size)
+    currBin=0
+
+    # not applicable if only training on one batch
+    # accounts for different batchSize of last bin 
+    if(remainder != 0 and currBin == (binQuantity -1)):
+        batch_size = batch_size + remainder
+        
+    
+    i = 0 
+    while LA.norm(D) >= K:
+        # add these (batch_size) points to list
+        miniBatchData.append(data[i: i + batch_size, :])
+        # convert list to array and reshape array
+        miniBatchData = np.reshape(np.array(miniBatchData), (batch_size,2))
+        # segment data into x and y data
+        mini_x = np.reshape((miniBatchData[:,0]), (batch_size, 1))
+        mini_y = np.reshape((miniBatchData[:,1]), (batch_size, 1))
+        # pass x and y into gd function 
+        #FIXME
+        # mini_w, mini_d_hist, mini_c_hist, mini_count, D, conv_speed = min_gd(mini_x,mini_y, K, mini_w, D)
+
+        cost = LLS_func(mini_x, mini_y, w, deg)
+        d_hist.append(LA.norm(D))
+        c_hist.append(cost)
+
+        eps = 1
+        m = LA.norm(D) ** 2
+        t = 0.5 * m
+        while LLS_func(mini_x, mini_y, w-eps*D, 1) > LLS_func(mini_x, mini_y, w, 1) - eps* t:
+            eps *= 0.9
+        w = w-(eps*D)
+
+        D = LLS_deriv(mini_x, mini_y, w, deg)
+    return w, d_hist, c_hist, iterations
+
+    
+
 
 
 # plot will  be spikey, batch gradients descent and schcastic will be smooth,
 # # randomize will make loinger process cs cutting complexity f each iterastion
 # newtons limits num of iterations, but complexity of each iteration is bigger
 # converge faster, find optimaum in more math
+def plot(count, d_hist, c_hist):
+    iterations = np.linspace(1,count, count)
+    plt.plot(iterations, d_hist, color = 'b', marker = (5, 1))
+    plt.title('Derivative Size with Respect to Iterations')
+    plt.ylabel("Derivative Size")
+    plt.xlabel("Iterations")
+    plt.show()
+    plt.clf()
 
-# UNCOMMENT ME TO PLOT 1b. !!!!!!
-# iterations = np.linspace(1,count, count)
-# plt.plot(iterations, d_hist, color = 'b', marker = (5, 1))
-# plt.title('Derivative Size with Respect to Iterations')
-# plt.ylabel("Derivative Size")
-# plt.xlabel("Iterations")
-# plt.show()
-# plt.clf()
+    plt.plot(iterations, c_hist, color = 'b', marker = (5, 1))
+    plt.title('Cost Size with Respect to Iterations')
+    plt.ylabel("Cost Size")
+    plt.xlabel("Iterations")
+    plt.show()
+    plt.clf()
 
-# plt.plot(iterations, c_hist, color = 'b', marker = (5, 1))
-# plt.title('Cost Size with Respect to Iterations')
-# plt.ylabel("Cost Size")
-# plt.xlabel("Iterations")
-# plt.show()
-# plt.clf()
 
 # 1c. Repeat part 1b, but now implement mini-batch gradient descent by randomizing
 #     the data points used in each iteration.  Perform mini-batch descent for batches
@@ -186,6 +241,7 @@ min_gd(x,y,K, w, D)
 #for loop that goes through range (5,10,25,50)
 
 def gd(x, y, K, w, D):
+
     # with fixed step size
     deg = 1
     K = 0.01  
@@ -194,6 +250,7 @@ def gd(x, y, K, w, D):
     eps = 0.09
     d_hist = []
     c_hist = []
+    #FIXME: add timer. set conv_time = time
     while(LA.norm(D) >= K):
         #FIXME: why does the derivative keep increasing --> goes to infinity 
         # need deriv to get closer to 0 
@@ -207,7 +264,11 @@ def gd(x, y, K, w, D):
 # gd(x,y, K, w, D)
 
 def mini(batch_size, x, y):
+    # FIXMEEEE: is the gd function being called bathc_size times?
+
+
     # randomize the data, but keep x,y pairs together
+    batch_sizes = [5, 10, 25, 50]
     data = np.c_[x, y]
     np.random.shuffle(data)
     N = len(data)
@@ -216,43 +277,43 @@ def mini(batch_size, x, y):
     remainder = N - (binQuantity*batch_size)
     # create (batch_size) num bins 
     miniBatchData = []
-    i =0
+    w = []
+    mini_w = np.array([[100],[-100]])
+    D = []
+    d_hist = []
+    c_hist = []
+    count = 0
+    i = 0
     currBin=0
+    # for each miniBatch, calculate 1 step of gd using miniBatch 
     while(i<len(x)):
         miniBatchData = []
         errorList = []
         if(remainder != 0 and currBin == (binQuantity -1)):
             batch_size = batch_size + remainder
-        data[i:i + batch_size, :]
         # now we add these (batch_size) points to list
         miniBatchData.append(data[i:i + batch_size, :])
+        # convert list to array
         miniBatchData = np.array(miniBatchData)
-        # print(miniBatchData)
-        # print('_________________________')
-        # # train on the mini batch
-        # # segment list to x and y
-        # x = ((miniBatchData[:][0])[:,0])
-        # y = ((miniBatchData[:][0])[:,1])
-        # print(np.shape(miniBatchData))
-
-
-        # FIXMEEEEE: dont want to have to keep reshaping
-        # print(miniBatchData)
+        # reshape array
         miniBatchData = np.reshape(miniBatchData, (batch_size,2))
-        # print('___________RESHAPE______________')
-        # print(miniBatchData)
+        # segment data into x and y data
         mini_x = np.reshape((miniBatchData[:,0]), (batch_size, 1))
         mini_y = np.reshape((miniBatchData[:,1]), (batch_size, 1))
-        # print(mini_x)
-        # print(mini_y)
         # pass x and y into gd function 
-        print('_________________________')
-        min_gd(mini_x,mini_y, K, w, D)
-        # errorList.append(min_gd(mini_x,mini_y, K, w, D))
-        print('done')
+        print('x size: ', len(x))
+        print(binQuantity)
+        mini_w, mini_d_hist, mini_c_hist, mini_count, D, conv_speed = min_gd(mini_x,mini_y, K, mini_w, D)
+        # do we increment like i = batch_size * i
         i += batch_size
-        currBin+=1
-    return errorList
+        print('done')
+        d_hist.append(mini_d_hist)
+        c_hist.append(mini_c_hist)
+    plot(count, d_hist, c_hist)
+    # return errorList
+    
+
+# plot commands, plot cost and deriv history for each batch size 
 print('-----------')
 mini(5, x,y)
 

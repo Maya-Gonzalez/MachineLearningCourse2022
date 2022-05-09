@@ -35,7 +35,6 @@ def A_mat(x, deg):
         newCol = np.power(x, (deg-1) -i)
         A = np.c_[A, newCol]
     A = np.c_[A, ones]
-    print(A)
     return A
 
 def LLS_Solve(x,y, deg):
@@ -54,10 +53,10 @@ def LLS_ridge(x,y,deg,lam):
        deg: degree of the polynomial fit.
        lam: parameter for the ridge regression."""
     A = A_mat(x, deg)
+    #print(A)
+    print(np.identity((A).shape[1]))
     I = np.identity((A).shape[1])
-    tobe = A.T@A + (lam*I)
-    w = (LA.inv(tobe))@(A.T@y)
-    # w = (LA.inv(A.T@A + (lam*I)))@(A.T@y)
+    w = LA.inv(A.T@A + (lam*I))@(A.T@y)
     return w
 
 def poly_func(data, coeffs):
@@ -91,25 +90,25 @@ def RMSE(x,y,w):
     wtd_rmse = np.sqrt(((y-Aw)**2).mean())
     return wtd_rmse
 
-# # 1b. Solve the least squares linear regression problem for the Athens 
-# #     temperature data.  Make sure to annotate the plot with the RMSE.
-# data = np.genfromtxt('athens_ww2_weather.csv', delimiter=',')
-# deg = 1
-# x_vals= data[1:, 8:9] # 8th col is min vals
-# y_vals = data[1:, 7:8] # 7th col is max vals
-# A = A_mat(x_vals, deg)
+# 1b. Solve the least squares linear regression problem for the Athens 
+#     temperature data.  Make sure to annotate the plot with the RMSE.
+data = np.genfromtxt('athens_ww2_weather.csv', delimiter=',')
+deg = 1
+x_vals= data[1:, 8:9] # 8th col is min vals
+y_vals = data[1:, 7:8] # 7th col is max vals
+A = A_mat(x_vals, deg)
 
-# weights = LLS_Solve(x_vals, y_vals, deg) 
-# y_pred = poly_func(A, weights)
-# rmse = RMSE(x_vals,y_vals,weights)
-# plt.scatter( x_vals, y_vals, color = 'b', marker = (5, 1))
-# plt.plot(x_vals, y_pred, color = "r") 
-# plt.title('Temperature Variations in Athens, Greece (Nov. 1944 - Dec. 1945)')
-# plt.text(-2,43,'RMSE: {RMSE_val}'.format(RMSE_val = round(rmse,2)), size = 10, color = 'purple')
-# plt.xlabel("Minimum Temperature C°")
-# plt.ylabel("Maximum Temperature C°")
-# # plt.show()
-# plt.clf()
+weights = LLS_Solve(x_vals, y_vals, deg) 
+y_pred = poly_func(A, weights)
+rmse = RMSE(x_vals,y_vals,weights)
+plt.scatter( x_vals, y_vals, color = 'b', marker = (5, 1))
+plt.plot(x_vals, y_pred, color = "r") 
+plt.title('Temperature Variations in Athens, Greece (Nov. 1944 - Dec. 1945)')
+plt.text(-2,43,'RMSE: {RMSE_val}'.format(RMSE_val = round(rmse,2)), size = 10, color = 'purple')
+plt.xlabel("Minimum Temperature C°")
+plt.ylabel("Maximum Temperature C°")
+plt.show()
+plt.clf()
 
 
 
@@ -117,13 +116,8 @@ def RMSE(x,y,w):
 #------------------------------------------------------------------------------
 
 yosemite_data = pd.read_csv('Yosemite_Visits.csv', thousands=',', index_col =0)
-# print(yosemite_data)
-# gives all value pairs for each month
 yearIndex = [0,10,20,30]
 
-# for each year in Years, get all the month values
-
-# for all 4 years, add each month's data (month can be indexed by i (0-12))
 allYears = []
 for i in yearIndex:
     allYears.append( yosemite_data.iloc[i][:])
@@ -142,10 +136,9 @@ year1988 = yosemite_data.loc[1988, :]
 #     from the years used for training).
 
 
-deg = 10
+deg = 11
 monthRow= np.array([elem for elem in [1,2,3,4,5,6,7,8,9,10,11,12]])
 x_vals = np.c_[monthRow]
-print(x_vals)
 
 A = A_mat(x_vals, deg)
 col2018 = np.c_[year2018]
@@ -165,7 +158,7 @@ def plotYears():
     plt.scatter(x_vals, year1988, color = 'hotpink', marker = '*', s = 40, facecolors = 'none') 
     plt.plot(x_vals, year1988, color = "hotpink", label = '1988') 
 
-# for loop to create 20 plots for deg 1-20
+# # for loop to create 20 plots for deg 1-20
 # for deg in range(1,21):
 #     plotYears()
 #     A = A_mat(x_vals, deg)
@@ -175,7 +168,7 @@ def plotYears():
 #     handles, labels = plt.gca().get_legend_handles_labels()
 #     plt.legend(handles, labels, loc = 'upper left')
 #     plt.title('Yosemite Visitors with Degree-%d Least Squares (Var. Years)' % deg)
-#     # plt.show()
+#     plt.show()
 
 # used_years = []
 # for i  in range(1,4):
@@ -198,34 +191,39 @@ def plotYears():
 #         deg_list.append(deg)
 #         rmse_list.append(rmse)
 #         func_list.append(func)
-#     plt.scatter(deg_list, func_list, color = 'blue', marker = '*', s = 40) 
 #     plt.plot(deg_list, func_list, color = "blue", label = 'Training Error')
+#     plt.scatter(deg_list, func_list, color = 'blue', marker = '*', s = 40) 
+    
+#     plt.plot(deg_list, rmse_list, color = "orange", label = 'RMSE')   
 #     plt.scatter(deg_list, rmse_list, color = 'orange', marker = 'o',s = 40) 
-#     plt.plot(deg_list, rmse_list, color = "orange", label = 'RMSE')      
+       
 #     handles, labels = plt.gca().get_legend_handles_labels()
 #     plt.legend(handles, labels, loc = 'upper left')
 #     plt.title('Training vs. RMSE for Yosemite Visitors %d' % year)
-#     # plt.show()
+#     plt.show()
 
 # 2b. Solve the ridge regression regularization fitting for 5 years of data for
 #     a fixed degree n >= 10.  Vary the parameter lam over 20 equally-spaced
 #     values from 0 to 1.  Annotate the plots with this value.  
    
-deg = 10
-lam = np.linspace(0.0,1.0,10)
-print(A[11][0])
-# print(y_vals.shape)
-# ridge = LLS_ridge(x_vals,y_vals,11,.25)
-# print(ridge.shape)
-print(y_vals)
+deg = 5
+lam = np.linspace(0.0,1.0,20)
+monthCol = monthRow.T
+newx_vals = np.hstack((monthCol, monthCol, monthCol, monthCol))
+y_vals = np.hstack((year2018, year2008, year1998, year1988))
+
+
 for i in range(20):
+    # print(x_vals); print(y_vals)
     plotYears()
-    ridge = LLS_ridge(x_vals,y_vals,deg,lam[i])
+    ridge = LLS_ridge(newx_vals,y_vals,deg,lam[i])
+    print(ridge.shape)
+    print(ridge)
     plt.plot(x_vals, ridge, color = "r", label = 'Ridge, lambda= {:1.2f}'.format(lam[i]))
     handles, labels = plt.gca().get_legend_handles_labels()
     plt.legend(handles, labels, loc = 'upper left')
     plt.title('Yosemite Visitors Ridge Regression (%d Degree)' % deg)
-    # plt.show()
+    plt.show()
 
     
 
